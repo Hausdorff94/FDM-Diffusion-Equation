@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# As v1, but using scipy.sparse.diags instead of spdiags
 """
 Functions for solving a 1D diffusion equations of simplest types
 (constant coefficient, no source term):
@@ -30,29 +29,24 @@ u_n   u at the previous time level.
 dx    Constant mesh spacing in x.
 dt    Constant mesh spacing in t.
 ===== ==========================================================
-
-user_action is a function of (u, x, t, n), u[i] is the solution at
-spatial mesh point x[i] at time t[n], where the calling code
-can add visualization, error computations, data analysis,
-store solutions, etc.
 """
+import os
 import sys
 import time
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
-import scipy.sparse
-import scipy.sparse.linalg
+
+import imageio
 
 #import scitools.std as plt
 
 
 def solver_FE_simple(I, a, f, L, dt, F, T):
-    """
-    Simplest expression of the computational algorithm
-    using the Forward Euler method and explicit Python loops.
-    For this method F <= 0.5 for stability.
-    """
-    t0 = time.clock()  # For measuring the CPU time
+    folder = 'images'
+    files = []
+    t0 = time.process_time()  # For measuring the CPU time
 
     Nt = int(round(T/float(dt)))
     t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
@@ -83,7 +77,23 @@ def solver_FE_simple(I, a, f, L, dt, F, T):
         # Switch variables before next step
         u_n, u = u, u_n
 
-    t1 = time.clock()
+        if n == 0:
+            u_max = max(u_n) * 1.1
+
+        figpath = 'images/Sol-at-' + str(n) + '.png'
+        plt.plot(x, u_n)
+        plt.ylim(0, u_max)
+        plt.title('t = ' + str(n) + 's    ' + 'F = ' + str(F))
+        plt.savefig(figpath)
+        plt.clf()
+
+        files.append(figpath)
+
+    t1 = time.process_time()
+
+    images = [imageio.imread(file) for file in files]
+    imageio.mimwrite('movie.gif', images, fps=10)
+
     return u_n, x, t, t1-t0  # u_n holds latest u
 
 
@@ -139,3 +149,23 @@ def solver_FE(I, a, f, L, dt, F, T,
 
     t1 = time.clock()
     return t1-t0
+
+
+def I(x):
+    return np.exp(-0.5*((x-L/2.0)**2)/sigma**2)
+
+
+def f(x, y):
+    return 0
+
+
+global a, L, F, sigma
+a = 0.8
+L = 5
+dt = 0.01
+F = 0.49
+T = 1
+sigma = 0.08
+
+u, x, t, cpu = solver_FE_simple(
+    I=I, a=a, f=f, L=L, dt=dt, F=F, T=T)
