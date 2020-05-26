@@ -44,7 +44,6 @@ import imageio
 
 
 def solver_FE_simple(I, a, f, L, dt, F, T):
-    folder = 'images'
     files = []
     t0 = time.process_time()  # For measuring the CPU time
 
@@ -80,7 +79,7 @@ def solver_FE_simple(I, a, f, L, dt, F, T):
         if n == 0:
             u_max = max(u_n) * 1.1
 
-        figpath = 'images/Sol-at-' + str(n) + '.png'
+        figpath = 'images/sol-exp-at-' + str(n) + '.png'
         plt.plot(x, u_n)
         plt.ylim(0, u_max)
         plt.title('t = ' + str(n) + 's    ' + 'F = ' + str(F))
@@ -92,7 +91,7 @@ def solver_FE_simple(I, a, f, L, dt, F, T):
     t1 = time.process_time()
 
     images = [imageio.imread(file) for file in files]
-    imageio.mimwrite('movie.gif', images, fps=10)
+    imageio.mimwrite('sol-exp-F_' + str(F) + '.gif', images, fps=10)
 
     return u_n, x, t, t1-t0  # u_n holds latest u
 
