@@ -79,6 +79,10 @@ def solver_FE_simple(I, a, f, L, dt, F, T):
         if n == 0:
             u_max = max(u_n) * 1.1
 
+        aux = max(u_n)
+        if aux > u_max:
+            u_max = aux*1.1
+
         figpath = 'images/sol-exp-at-' + str(n) + '.png'
         plt.plot(x, u_n)
         plt.ylim(0, u_max)
@@ -162,7 +166,7 @@ global a, L, F, sigma
 a = 0.8
 L = 5
 dt = 0.01
-F = 0.49
+F = 0.55
 T = 1
 sigma = 0.08
 
