@@ -166,7 +166,7 @@ global a, L, F, sigma
 a = 0.8
 L = 5
 dt = 0.01
-F = 0.55
+F = 0.5
 T = 1
 sigma = 0.08
 
