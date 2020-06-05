@@ -74,7 +74,64 @@ def solver_BE_simple(I, a, f, L, dt, F, T):
     t1 = time.process_time()
 
     images = [imageio.imread(file) for file in files]
-    imageio.mimwrite('sol-imp-F_' + str(F) +'.gif', images, fps=10)
+    imageio.mimwrite('sol-imp-F_' + str(F) + '.gif', images, fps=10)
+
+    return u_n, x, t, t1-t0
+
+
+def solver_BE(I, a, f, L, dt, F, T, user_action=None):
+    """
+    Vectorized implementation of solver_BE_simple using also
+    a sparse (tridiagonal) matrix for efficiency.
+    """
+    t0 = time.process_time()  # for measuring the CPU time
+
+    Nt = int(round(T/float(dt)))
+    t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+    dx = np.sqrt(a*dt/F)
+    Nx = int(round(L/dx))
+    x = np.linspace(0, L, Nx+1)       # Mesh points in space
+    # Make sure dx and dt are compatible with x and t
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
+
+    u = np.zeros(Nx+1)   # solution array at t[n+1]
+    u_n = np.zeros(Nx+1)   # solution at t[n]
+
+    # Representation of sparse matrix and right-hand side
+    diagonal = np.zeros(Nx+1)
+    lower = np.zeros(Nx)
+    upper = np.zeros(Nx)
+    b = np.zeros(Nx+1)
+
+    # Precompute sparse matrix
+    diagonal[:] = 1 + 2*F
+    lower[:] = -F  # 1
+    upper[:] = -F  # 1
+    # Insert boundary conditions
+    diagonal[0] = 1
+    upper[0] = 0
+    diagonal[Nx] = 1
+    lower[-1] = 0
+
+    A = scipy.sparse.diags(
+        diagonals=[diagonal, lower, upper],
+        offsets=[0, -1, 1], shape=(Nx+1, Nx+1),
+        format='csr')
+    print(A.todense())
+
+    # Set initial condition
+    for i in range(0, Nx+1):
+        u_n[i] = I(x[i])
+
+    for n in range(0, Nt):
+        b = u_n + dt*f(x[:], t[n+1])
+        b[0] = b[-1] = 0.0  # boundary conditions
+        u[:] = scipy.sparse.linalg.spsolve(A, b)
+
+        u_n, u = u, u_n
+
+    t1 = time.process_time()
 
     return u_n, x, t, t1-t0
 
@@ -91,7 +148,7 @@ global a, L, F, sigma
 a = 0.8
 L = 5
 dt = 0.01
-F = 0.55
+F = 11
 T = 1
 sigma = 0.08
 
